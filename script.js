@@ -19,12 +19,16 @@ function isENSDomain(domain) {
 
 async function resolveDomain(domain) {
   const url = `https://doh.nathan.wtf/dns-query?name=${domain}&type=A`;
-  const response = await fetch(url, {
-    headers: { accept: "application/dns-json" }
-  });
-  const data = await response.json();
-  if (data.Answer && data.Answer.length > 0) {
-    return data.Answer[0].data;
+  try {
+    const response = await fetch(url, {
+      headers: { accept: "application/dns-json" }
+    });
+    const data = await response.json();
+    if (data.Answer && data.Answer.length > 0) {
+      return data.Answer[0].data;
+    }
+  } catch (e) {
+    console.error("DNS error:", e);
   }
   return null;
 }
@@ -36,30 +40,19 @@ async function loadUrl() {
   if (!domain) return;
 
   const ip = await resolveDomain(domain);
+
   const tab = tabs[currentTab];
-  const iframe = tab.iframe;
 
   if (ip) {
-    iframe.src = `https://${ip}`;
-    iframe.style.display = "block";
-    document.getElementById("lockIcon").style.visibility = isHNSDomain(domain) || isENSDomain(domain) ? "visible" : "hidden";
-
-    if (!localStorage.getItem("bookmarks")) {
-      localStorage.setItem("bookmarks", JSON.stringify([]));
-    }
-
-    let bookmarks = JSON.parse(localStorage.getItem("bookmarks"));
-    if (!bookmarks.includes(domain)) {
-      bookmarks.push(domain);
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-      loadBookmarks();
-    }
+    window.open(`https://${ip}`, "_blank");
   } else {
-    const error = document.createElement("div");
-    error.className = "error";
-    error.innerText = "Could not resolve domain.";
-    tab.container.innerHTML = "";
-    tab.container.appendChild(error);
+    const fallback = isHNSDomain(domain)
+      ? `https://${domain}.hns.si`
+      : isENSDomain(domain)
+        ? `https://${domain}.eth.limo`
+        : `https://${domain}`;
+
+    window.open(fallback, "_blank");
   }
 }
 

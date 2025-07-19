@@ -46,13 +46,17 @@ async function loadUrl() {
   if (ip) {
     window.open(`https://${ip}`, "_blank");
   } else {
-    const fallback = isHNSDomain(domain)
-      ? `https://${domain}.hns.si`
-      : isENSDomain(domain)
-        ? `https://${domain}.eth.limo`
-        : `https://${domain}`;
+    window.open(getFallbackURL(domain), "_blank");
+  }
+}
 
-    window.open(fallback, "_blank");
+function getFallbackURL(domain) {
+  if (isHNSDomain(domain)) {
+    return `https://${domain}.hns.to`; // ✅ Changed to hns.to
+  } else if (isENSDomain(domain)) {
+    return `https://${domain}.eth.limo`;
+  } else {
+    return `https://${domain}`;
   }
 }
 

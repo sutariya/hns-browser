@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HNS Browser</title>
+  <title>HNS Browser by Godfather/</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="assets/hns-logo.png" />
   <script src="https://cdn.tailwindcss.com "></script>
 </head>
-<body class="h-screen flex flex-col font-sans">
+<body class="h-screen flex flex-col font-sans overflow-hidden">
   <!-- Loading Screen -->
   <div id="loadingScreen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
     <img src="assets/hns-logo.png" alt="HNS Logo" class="w-20 h-20 animate-pulse" />
@@ -23,15 +23,19 @@
     </div>
 
     <!-- Address Bar -->
-    <div class="flex items-center bg-gray-100 dark:bg-gray-700 p-2 space-x-2">
-      <button id="lockIcon" class="text-green-500">
+    <div class="flex items-center bg-gray-100 dark:bg-gray-700 p-2 border-b border-gray-300 dark:border-gray-600">
+      <button id="lockIcon" class="text-green-500 mx-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       </button>
-      <input id="urlInput" type="text" placeholder="Enter HNS, .eth or .com domain" class="flex-grow p-2 rounded border border-gray-300 dark:bg-gray-600 dark:border-gray-500 outline-none" onkeydown="if(event.key==='Enter') loadUrl()" />
-      <button onclick="loadUrl()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded">Go</button>
-      <button onclick="toggleDarkMode()" class="text-gray-700 dark:text-gray-200">
+      <input id="urlInput" type="text" placeholder="Enter HNS, .eth or .com domain" class="flex-grow p-2 rounded border border-gray-300 dark:bg-gray-600 dark:border-gray-500 outline-none focus:ring-2 focus:ring-blue-400 transition" onkeydown="if(event.key==='Enter') loadUrl()" />
+      <button onclick="loadUrl()" class="mx-2 text-blue-500 hover:text-blue-700 dark:hover:text-blue-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+      <button onclick="toggleDarkMode()" class="mx-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
         </svg>
@@ -39,12 +43,12 @@
     </div>
 
     <!-- Tabs -->
-    <div id="tabs" class="flex-1"></div>
+    <div id="tabs" class="flex-1 bg-gray-200 dark:bg-gray-800"></div>
 
-    <!-- Bookmarks -->
-    <div class="p-2 bg-gray-100 dark:bg-gray-700 text-sm">
-      <strong>Bookmarks:</strong>
-      <div id="bookmarks" class="mt-1"></div>
+    <!-- Bookmarks Bar -->
+    <div class="p-1 bg-gray-200 dark:bg-gray-800 text-sm overflow-x-auto flex items-center space-x-2">
+      <strong class="text-gray-500 dark:text-gray-400 whitespace-nowrap">Bookmarks:</strong>
+      <div id="bookmarks" class="flex space-x-2 overflow-x-auto"></div>
     </div>
   </div>
 

@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loadingScreen").style.display = "none";
     addTab();
     loadBookmarks();
+
+    // Focus input
+    const input = document.getElementById("urlInput");
+    if (input) input.focus();
   }, 1000);
 });
 
@@ -17,46 +21,23 @@ function isENSDomain(domain) {
   return domain.endsWith(".eth");
 }
 
-async function resolveDomain(domain) {
-  const url = `https://doh.nathan.wtf/dns-query?name=${domain}&type=A`;
-  try {
-    const response = await fetch(url, {
-      headers: { accept: "application/dns-json" }
-    });
-    const data = await response.json();
-    if (data.Answer && data.Answer.length > 0) {
-      return data.Answer[0].data;
-    }
-  } catch (e) {
-    console.error("DNS error:", e);
-  }
-  return null;
-}
-
 async function loadUrl() {
   const input = document.getElementById("urlInput");
   let domain = input.value.trim().toLowerCase();
 
   if (!domain) return;
 
-  const ip = await resolveDomain(domain);
-
-  const tab = tabs[currentTab];
-
-  if (ip) {
-    window.open(`https://${ip}`, "_blank");
-  } else {
-    window.open(getFallbackURL(domain), "_blank");
-  }
+  const url = getResolvedURL(domain);
+  window.open(url, "_blank");
 }
 
-function getFallbackURL(domain) {
+function getResolvedURL(domain) {
   if (isHNSDomain(domain)) {
-    return `https://${domain}.hns.to`; // ✅ Changed to hns.to
+    return `https://${domain}.hns.to`;
   } else if (isENSDomain(domain)) {
     return `https://${domain}.eth.limo`;
   } else {
-    return `https://${domain}`;
+    return domain.includes("://") ? domain : `https://${domain}`;
   }
 }
 
@@ -65,18 +46,8 @@ function addTab() {
   container.className = "tab active";
   const iframe = document.createElement("iframe");
   iframe.src = "about:blank";
+  iframe.style.zIndex = "0";
   container.appendChild(iframe);
-
-  const closeTab = () => {
-    const index = tabs.indexOf(tab);
-    if (index > -1) {
-      tabs.splice(index, 1);
-      if (currentTab >= index) {
-        currentTab = Math.max(0, currentTab - 1);
-      }
-      switchTab(currentTab);
-    }
-  };
 
   const tab = { container, iframe };
 
@@ -128,8 +99,9 @@ function loadBookmarks() {
     const link = document.createElement("a");
     link.href = "#";
     link.textContent = bookmark;
-    link.className = "block text-blue-500 hover:underline";
-    link.onclick = () => {
+    link.className = "block px-2 py-1 text-blue-500 hover:underline whitespace-nowrap";
+    link.onclick = (e) => {
+      e.preventDefault();
       document.getElementById("urlInput").value = bookmark;
       loadUrl();
     };

@@ -35,4 +35,13 @@
 </head>
 <body>
   <h1>Resolve HNS Domains</h1>
-  <input id="domain
+  <input id="domainInput" placeholder="Enter HNS domain (e.g., sutariya)" />
+  <button onclick="resolveHNS()">Go</button>
+  <div id="error"></div>
+  <iframe id="viewer"></iframe>
+
+  <!-- DNS Packet Library -->
+  <script src="https://cdn.jsdelivr.net/npm/dns-packet @5.6.1/index.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 let tabs = [];
 let currentTab = 0;
 
-// Load dns-packet once on startup
+// Load dns-packet once
 let dnsPacketReady = false;
 const dnsScript = document.createElement('script');
 dnsScript.src = "https://cdn.jsdelivr.net/npm/dns-packet@5.6.1/index.min.js";
@@ -24,35 +24,27 @@ function isENSDomain(domain) {
   return domain.endsWith(".eth");
 }
 
-async function resolveDomain(domain) {
-  // Wait until dns-packet is loaded
+async function resolveHNS(domain, type = 'A') {
   while (!dnsPacketReady) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(r => setTimeout(r, 50));
   }
 
   const query = dnsPacket.encode({
     type: 'query',
     id: 1,
     flags: dnsPacket.RECURSION_DESIRED,
-    questions: [{ type: 'A', name: domain }]
+    questions: [{ type, name: domain }]
   });
 
-  try {
-    const res = await fetch("https://na.hnsdoh.com/dns-query", {
-      method: "POST",
-      headers: { "Content-Type": "application/dns-message" },
-      body: query
-    });
+  const res = await fetch("https://query.hdns.io/dns-query", {
+    method: "POST",
+    headers: { "Content-Type": "application/dns-message" },
+    body: query
+  });
 
-    const arrayBuf = await res.arrayBuffer();
-    const decoded = dnsPacket.decode(new Uint8Array(arrayBuf));
-    const answer = decoded.answers?.find(ans => ans.type === 'A');
-
-    return answer?.data || null;
-  } catch (err) {
-    console.error("Resolution failed:", err);
-    return null;
-  }
+  const buf = await res.arrayBuffer();
+  const decoded = dnsPacket.decode(new Uint8Array(buf));
+  return decoded.answers || [];
 }
 
 async function loadUrl() {
@@ -63,26 +55,49 @@ async function loadUrl() {
   const tab = tabs[currentTab];
   const iframe = tab.iframe;
 
-  const ip = await resolveDomain(domain);
+  let ipAnswers = await resolveHNS(domain, 'A');
 
-  if (ip) {
+  if (ipAnswers.length > 0) {
+    const ip = ipAnswers[0].data;
     iframe.src = `http://${ip}`;
     iframe.style.display = "block";
-    document.getElementById("lockIcon").style.visibility =
-      isHNSDomain(domain) || isENSDomain(domain) ? "visible" : "hidden";
+    updatePadlock(domain);
+    saveBookmark(domain);
+    return;
+  }
 
-    let bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
-    if (!bookmarks.includes(domain)) {
-      bookmarks.push(domain);
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-      loadBookmarks();
-    }
-  } else {
-    const error = document.createElement("div");
-    error.className = "error";
-    error.innerText = "Could not resolve domain.";
-    tab.container.innerHTML = "";
-    tab.container.appendChild(error);
+  // Try TXT record (for IPFS / Skynet)
+  const txtAnswers = await resolveHNS(domain, 'TXT');
+  const txt = txtAnswers.map(a => a.data).find(text => text.includes('dnslink=/ipfs/'));
+
+  if (txt) {
+    const hash = txt.split('=')[1]; // "/ipfs/xyz..."
+    iframe.src = `https://ipfs.io${hash}`;
+    iframe.style.display = "block";
+    updatePadlock(domain);
+    saveBookmark(domain);
+    return;
+  }
+
+  // Fail state
+  const error = document.createElement("div");
+  error.className = "error";
+  error.innerText = "Could not resolve domain.";
+  tab.container.innerHTML = "";
+  tab.container.appendChild(error);
+}
+
+function updatePadlock(domain) {
+  document.getElementById("lockIcon").style.visibility =
+    isHNSDomain(domain) || isENSDomain(domain) ? "visible" : "hidden";
+}
+
+function saveBookmark(domain) {
+  let bookmarks = JSON.parse(localStorage.getItem("bookmarks") || "[]");
+  if (!bookmarks.includes(domain)) {
+    bookmarks.push(domain);
+    localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    loadBookmarks();
   }
 }
 

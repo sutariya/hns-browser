@@ -1,6 +1,13 @@
 let tabs = [];
 let currentTab = 0;
 
+// Load dns-packet once on startup
+let dnsPacketReady = false;
+const dnsScript = document.createElement('script');
+dnsScript.src = "https://cdn.jsdelivr.net/npm/dns-packet@5.6.1/index.min.js";
+dnsScript.onload = () => dnsPacketReady = true;
+document.head.appendChild(dnsScript);
+
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     document.getElementById("loadingScreen").style.display = "none";
@@ -17,15 +24,11 @@ function isENSDomain(domain) {
   return domain.endsWith(".eth");
 }
 
-// DNS-packet-based DoH resolution via https://na.hnsdoh.com
 async function resolveDomain(domain) {
-  const encoderScript = document.createElement('script');
-  encoderScript.src = "https://cdn.jsdelivr.net/npm/dns-packet@5.6.1/index.min.js";
-  document.head.appendChild(encoderScript);
-
-  await new Promise((resolve) => {
-    encoderScript.onload = resolve;
-  });
+  // Wait until dns-packet is loaded
+  while (!dnsPacketReady) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
 
   const query = dnsPacket.encode({
     type: 'query',
@@ -57,9 +60,10 @@ async function loadUrl() {
   let domain = input.value.trim().toLowerCase();
   if (!domain) return;
 
-  const ip = await resolveDomain(domain);
   const tab = tabs[currentTab];
   const iframe = tab.iframe;
+
+  const ip = await resolveDomain(domain);
 
   if (ip) {
     iframe.src = `http://${ip}`;
